@@ -115,6 +115,77 @@ func testPointContainment() {
     #expect(containing50.isEmpty)
 }
 
+@Test("Point-based convenience methods")
+func testPointBasedConvenienceMethods() {
+    var tree = IntervalTree<Int, String>()
+
+    tree.insert(10...20, value: "A")
+    tree.insert(15...25, value: "B")
+    tree.insert(30...40, value: "C")
+    tree.insert(10...30, value: "D")
+    tree.insert(5...15, value: "E")
+
+    // Test contains(_ point:) method
+    #expect(tree.contains(15))
+    #expect(tree.contains(35))
+    #expect(tree.contains(5))  // Point 5 is contained in interval 5...15
+    #expect(!tree.contains(50))
+
+    // Test starting(at:) method
+    let startingAt10 = tree.starting(at: 10)
+    #expect(startingAt10.count == 2)
+    #expect(startingAt10.contains { $0.1 == "A" })
+    #expect(startingAt10.contains { $0.1 == "D" })
+
+    let startingAt15 = tree.starting(at: 15)
+    #expect(startingAt15.count == 1)
+    #expect(startingAt15.first?.1 == "B")
+
+    let startingAt5 = tree.starting(at: 5)
+    #expect(startingAt5.count == 1)
+    #expect(startingAt5.first?.1 == "E")
+
+    // Test ending(at:) method
+    let endingAt20 = tree.ending(at: 20)
+    #expect(endingAt20.count == 1)
+    #expect(endingAt20.first?.1 == "A")
+
+    let endingAt25 = tree.ending(at: 25)
+    #expect(endingAt25.count == 1)
+    #expect(endingAt25.first?.1 == "B")
+
+    let endingAt30 = tree.ending(at: 30)
+    #expect(endingAt30.count == 1)
+    #expect(endingAt30.first?.1 == "D")
+
+    // Test values(containing:) method
+    let valuesContaining15 = tree.values(containing: 15)
+    #expect(valuesContaining15.count == 4)
+    #expect(valuesContaining15.contains("A"))
+    #expect(valuesContaining15.contains("B"))
+    #expect(valuesContaining15.contains("D"))
+    #expect(valuesContaining15.contains("E"))
+
+    let valuesContaining35 = tree.values(containing: 35)
+    #expect(valuesContaining35.count == 1)
+    #expect(valuesContaining35.contains("C"))
+
+    // Test subscript access for points
+    let subscriptValues15 = tree[15]
+    #expect(subscriptValues15.count == 4)
+    #expect(subscriptValues15.contains("A"))
+    #expect(subscriptValues15.contains("B"))
+    #expect(subscriptValues15.contains("D"))
+    #expect(subscriptValues15.contains("E"))
+
+    let subscriptValues35 = tree[35]
+    #expect(subscriptValues35.count == 1)
+    #expect(subscriptValues35.contains("C"))
+
+    let subscriptValues50 = tree[50]
+    #expect(subscriptValues50.isEmpty)
+}
+
 // MARK: - Collection Protocol Tests
 
 @Test("Collection protocol compliance")

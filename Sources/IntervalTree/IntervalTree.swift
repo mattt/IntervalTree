@@ -308,6 +308,85 @@ public struct IntervalTree<Bound: Comparable & Sendable, Value> {
         overlapping(with: point...point)
     }
 
+    /// Returns whether any interval in the tree contains the specified point.
+    ///
+    /// This method provides an efficient way to check for the existence
+    /// of intervals containing a point without retrieving them all.
+    ///
+    /// ```swift
+    /// let tree = IntervalTree([(1...5, "A"), (10...15, "B")])
+    /// let hasPoint = tree.contains(4)  // Returns true
+    /// let noPoint = tree.contains(7)   // Returns false
+    /// ```
+    ///
+    /// - Parameter point: The point to check for containment.
+    /// - Returns: `true` if at least one interval contains the given point,
+    ///   `false` otherwise.
+    /// - Complexity: O(log n) where n is the number of intervals in the tree.
+    public func contains(_ point: Bound) -> Bool {
+        hasOverlap(with: point...point)
+    }
+
+    /// Returns all intervals that start at the specified point.
+    ///
+    /// An interval starts at a point if its lower bound equals the point.
+    ///
+    /// ```swift
+    /// let tree = IntervalTree([(1...5, "A"), (1...8, "B"), (3...7, "C")])
+    /// let startingAt1 = tree.starting(at: 1)
+    /// // Returns: [(1...5, "A"), (1...8, "B")]
+    /// ```
+    ///
+    /// - Parameter point: The point to check for interval starts.
+    /// - Returns: An array of tuples containing intervals that start at the point
+    ///   and their associated values.
+    /// - Complexity: O(k + log n) where k is the number of intervals starting at the point
+    ///   and n is the total number of intervals.
+    public func starting(at point: Bound) -> [(ClosedRange<Bound>, Value)] {
+        var results: [(ClosedRange<Bound>, Value)] = []
+        findStartingAt(root, point: point, results: &results)
+        return results
+    }
+
+    /// Returns all intervals that end at the specified point.
+    ///
+    /// An interval ends at a point if its upper bound equals the point.
+    ///
+    /// ```swift
+    /// let tree = IntervalTree([(1...5, "A"), (3...5, "B"), (5...8, "C")])
+    /// let endingAt5 = tree.ending(at: 5)
+    /// // Returns: [(1...5, "A"), (3...5, "B")]
+    /// ```
+    ///
+    /// - Parameter point: The point to check for interval ends.
+    /// - Returns: An array of tuples containing intervals that end at the point
+    ///   and their associated values.
+    /// - Complexity: O(k + log n) where k is the number of intervals ending at the point
+    ///   and n is the total number of intervals.
+    public func ending(at point: Bound) -> [(ClosedRange<Bound>, Value)] {
+        var results: [(ClosedRange<Bound>, Value)] = []
+        findEndingAt(root, point: point, results: &results)
+        return results
+    }
+
+    /// Returns all values for intervals that contain the specified point.
+    ///
+    /// This method provides a convenient way to retrieve just the values
+    /// from intervals containing a point without needing to handle the intervals themselves.
+    ///
+    /// ```swift
+    /// let tree = IntervalTree([(1...5, "A"), (3...8, "B"), (10...15, "C")])
+    /// let values = tree.values(containing: 4)  // Returns: ["A", "B"]
+    /// ```
+    ///
+    /// - Parameter point: The point to check for containment.
+    /// - Returns: An array of values from intervals that contain the point.
+    /// - Complexity: O(k + log n) where k is the number of containing intervals
+    ///   and n is the total number of intervals.
+    public func values(containing point: Bound) -> [Value] {
+        containing(point).map(\.1)
+    }
+
     /// Returns whether any interval in the tree
     /// overlaps with the specified interval.
     ///
@@ -657,6 +736,49 @@ public struct IntervalTree<Bound: Comparable & Sendable, Value> {
         results.append((node.interval, node.value))
         inorderTraversal(node.right, results: &results)
     }
+
+    private func findStartingAt(
+        _ node: Node?, point: Bound, results: inout [(ClosedRange<Bound>, Value)]
+    ) {
+        guard let node = node else { return }
+
+        // Check if current node starts at the point
+        if node.interval.lowerBound == point {
+            results.append((node.interval, node.value))
+        }
+
+        // Traverse left subtree if it might contain intervals starting at the point
+        if let left = node.left, left.minLowerBound <= point {
+            findStartingAt(left, point: point, results: &results)
+        }
+
+        // Traverse right subtree if it might contain intervals starting at the point
+        if let right = node.right, right.minLowerBound <= point {
+            findStartingAt(right, point: point, results: &results)
+        }
+    }
+
+    private func findEndingAt(
+        _ node: Node?, point: Bound, results: inout [(ClosedRange<Bound>, Value)]
+    ) {
+        guard let node = node else { return }
+
+        // Check if current node ends at the point
+        if node.interval.upperBound == point {
+            results.append((node.interval, node.value))
+        }
+
+        // Traverse left subtree if it might contain intervals ending at the point
+        if let left = node.left, left.maxUpperBound >= point {
+            findEndingAt(left, point: point, results: &results)
+        }
+
+        // Traverse right subtree if it might contain intervals ending at the point
+        if let right = node.right, right.maxUpperBound >= point {
+            findEndingAt(right, point: point, results: &results)
+        }
+    }
+
 }
 
 // MARK: - Sequence
@@ -788,6 +910,24 @@ extension IntervalTree: BidirectionalCollection {
     ///   and n is the total number of intervals.
     public subscript(interval: ClosedRange<Bound>) -> [Value] {
         overlapping(with: interval).map(\.1)
+    }
+
+    /// Returns all values for intervals that contain the specified point.
+    ///
+    /// This subscript provides a convenient way to retrieve values
+    /// from intervals containing a point using subscript syntax.
+    ///
+    /// ```swift
+    /// let tree = IntervalTree([(1...5, "A"), (3...8, "B"), (10...15, "C")])
+    /// let values = tree[4]  // Returns: ["A", "B"]
+    /// ```
+    ///
+    /// - Parameter point: The point to check for containment.
+    /// - Returns: An array of values from intervals that contain the point.
+    /// - Complexity: O(k + log n) where k is the number of containing intervals
+    ///   and n is the total number of intervals.
+    public subscript(point: Bound) -> [Value] {
+        values(containing: point)
     }
 }
 

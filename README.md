@@ -57,6 +57,24 @@ let hasConflict = tree.hasOverlap(with: 4...6) // true
 let containing = tree.containing(4)
 // Returns: [(1...5, "Task A"), (3...8, "Task B")]
 
+// Check if any interval contains a point (efficient existence check)
+let hasPoint = tree.contains(4) // true
+
+// Find intervals that start at a specific point
+let startingAt = tree.starting(at: 1)
+// Returns: [(1...5, "Task A")]
+
+// Find intervals that end at a specific point
+let endingAt = tree.ending(at: 8)
+// Returns: [(3...8, "Task B")]
+
+// Get just the values for intervals containing a point
+let values = tree.values(containing: 4)
+// Returns: ["Task A", "Task B"]
+
+// Use subscript syntax for point queries
+let pointValues = tree[4] // ["Task A", "Task B"]
+
 // Find intervals completely contained within a range
 let contained = tree.contained(in: 0...10)
 // Returns: [(1...5, "Task A"), (3...8, "Task B")]
@@ -84,6 +102,9 @@ for (interval, value) in tree {
 
 // Use subscript to get overlapping values
 let values = tree[4...6] // ["Task A", "Task B"]
+
+// Use subscript to get values for intervals containing a point
+let pointValues = tree[4] // ["Task A", "Task B"]
 
 // Access by index
 let first = tree[tree.startIndex] // (1...5, "Task A")
