@@ -571,6 +571,31 @@ func testCopyOnWrite() {
     #expect(!tree2.containing(8).isEmpty)
 }
 
+@Test("Mutating a tree with one owner keeps its nodes")
+func testMutationWithoutCopying() {
+    var tree = IntervalTree<Int, String>()
+    for start in 0..<100 {
+        tree.insert(start...(start + 5), value: "\(start)")
+    }
+    let nodes = nodeIdentifiers(tree.root)
+
+    tree.insert(200...205, value: "Later")
+    #expect(nodes.isSubset(of: nodeIdentifiers(tree.root)))
+
+    // A shared tree still copies before it changes.
+    let copy = tree
+    tree.insert(300...305, value: "Latest")
+    #expect(nodeIdentifiers(tree.root).isDisjoint(with: nodeIdentifiers(copy.root)))
+}
+
+private func nodeIdentifiers<Bound, Value>(
+    _ node: IntervalTree<Bound, Value>.Node?
+) -> Set<ObjectIdentifier> {
+    guard let node else { return [] }
+    return nodeIdentifiers(node.left).union(nodeIdentifiers(node.right))
+        .union([ObjectIdentifier(node)])
+}
+
 @Test("Codable support")
 func testCodable() throws {
     let original: IntervalTree<Int, String> = [
