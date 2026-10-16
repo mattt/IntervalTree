@@ -816,7 +816,11 @@ extension IntervalTree: Sequence {
             current = node.left
         }
 
-        return AnyIterator {
+        // Holding the root keeps the tree shared while the iterator exists,
+        // so mutating the tree copies its nodes
+        // instead of changing the ones the iterator still visits.
+        return AnyIterator { [root] in
+            defer { withExtendedLifetime(root) {} }
             guard let node = stack.popLast() else { return nil }
 
             var current = node.right

@@ -588,6 +588,23 @@ func testMutationWithoutCopying() {
     #expect(nodeIdentifiers(tree.root).isDisjoint(with: nodeIdentifiers(copy.root)))
 }
 
+@Test("Iterating keeps the intervals the tree had when iteration began")
+func testIterationDuringMutation() {
+    var tree = IntervalTree<Int, String>()
+    for point in 1...4 {
+        tree.insert(point...point, value: "\(point)")
+    }
+    var iterator = tree.makeIterator()
+    _ = iterator.next()
+    _ = iterator.next()
+
+    // The insert rotates nodes that the iterator still holds.
+    tree.insert(5...5, value: "5")
+    #expect(iterator.next()?.0 == 3...3)
+    #expect(iterator.next()?.0 == 4...4)
+    #expect(iterator.next() == nil)
+}
+
 private func nodeIdentifiers<Bound, Value>(
     _ node: IntervalTree<Bound, Value>.Node?
 ) -> Set<ObjectIdentifier> {
