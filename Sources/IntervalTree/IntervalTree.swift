@@ -194,8 +194,9 @@ public struct IntervalTree<Bound: Comparable & Sendable, Value> {
     /// Ensures copy-on-write semantics
     /// by copying the tree if it's shared
     private mutating func ensureUnique() {
-        // Binding the root to a local constant before this check would add a
-        // reference, so the check would fail and every mutation would copy.
+        // Binding the root to a local constant before this check
+        // would add a reference,
+        // so the check would fail and every mutation would copy.
         if !isKnownUniquelyReferenced(&root) {
             root = root?.copy()
         }
