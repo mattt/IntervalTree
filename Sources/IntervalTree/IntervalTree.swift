@@ -93,7 +93,7 @@ public struct IntervalTree<Bound: Comparable & Sendable, Value> {
 
     // MARK: - Properties
 
-    private var root: Node?
+    private(set) var root: Node?
 
     /// The number of intervals stored in the tree.
     ///
@@ -194,8 +194,11 @@ public struct IntervalTree<Bound: Comparable & Sendable, Value> {
     /// Ensures copy-on-write semantics
     /// by copying the tree if it's shared
     private mutating func ensureUnique() {
-        if let root = root, !isKnownUniquelyReferenced(&self.root) {
-            self.root = root.copy()
+        // Binding the root to a local constant before this check
+        // would add a reference,
+        // so the check would fail and every mutation would copy.
+        if !isKnownUniquelyReferenced(&root) {
+            root = root?.copy()
         }
     }
 
@@ -813,7 +816,11 @@ extension IntervalTree: Sequence {
             current = node.left
         }
 
-        return AnyIterator {
+        // Holding the root keeps the tree shared while the iterator exists,
+        // so mutating the tree copies its nodes
+        // instead of changing the ones the iterator still visits.
+        return AnyIterator { [root] in
+            defer { withExtendedLifetime(root) {} }
             guard let node = stack.popLast() else { return nil }
 
             var current = node.right
