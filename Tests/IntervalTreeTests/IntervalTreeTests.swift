@@ -630,3 +630,15 @@ func testCodable() throws {
     #expect(decoded == original)
     #expect(decoded.count == 3)
 }
+
+@Test func removeWhenSuccessorHasDuplicateIntervals() {
+    let pairs = zip([0, 1, 2, 3, 4, 4, 4], ["A", "B", "C", "D", "E", "F", "G"]).map {
+        ($0...$0, $1)
+    }
+    var tree = IntervalTree(sortedPairs: pairs)
+
+    #expect(tree.remove(3...3) == "D")
+    #expect(tree.count == 6)
+    #expect(tree.sorted.map(\.1).sorted() == ["A", "B", "C", "E", "F", "G"])
+    #expect(tree.overlapping(with: 4...4).map(\.1).sorted() == ["E", "F", "G"])
+}
