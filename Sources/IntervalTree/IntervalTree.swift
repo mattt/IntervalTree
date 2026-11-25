@@ -582,28 +582,30 @@ public struct IntervalTree<Bound: Comparable & Sendable, Value> {
 
             if node.left == nil {
                 return node.right
-            } else if node.right == nil {
-                return node.left
-            } else {
-                let minNode = findMin(node.right!)
-                node.interval = minNode.interval
-                node.value = minNode.value
-                var successorValue: Value?
-                node.right = removeNode(
-                    node.right, interval: minNode.interval, removedValue: &successorValue)
             }
+            guard let right = node.right else {
+                return node.left
+            }
+
+            let (successor, remainder) = removingMinimum(right)
+            node.interval = successor.interval
+            node.value = successor.value
+            node.right = remainder
         }
 
         node.update()
         return balance(node)
     }
 
-    private func findMin(_ node: Node) -> Node {
-        var current = node
-        while let left = current.left {
-            current = left
+    private func removingMinimum(_ node: Node) -> (minimum: Node, remainder: Node?) {
+        guard let left = node.left else {
+            return (node, node.right)
         }
-        return current
+
+        let (minimum, remainder) = removingMinimum(left)
+        node.left = remainder
+        node.update()
+        return (minimum, balance(node))
     }
 
     private func balance(_ node: Node) -> Node {
